@@ -60,28 +60,30 @@ export function stageShot(game, name) {
   game.hud.clearSay();
 
   if (name === 'drive') {
-    // Downtown at dusk: Dario's coupe on a north–south avenue, traffic around him.
+    // Downtown at dusk: Dario's convertible on a north–south avenue, traffic around him.
     const avenueX = -114; // the avenue three blocks west of the centre
     const car = game.heroCar;
     seatPlayer(game, car, avenueX - 3.4, 40, 0);
     car.speed = 17;
     const others = game.traffic.cars;
-    if (others[0]) {
-      others[0].mesh.position.set(avenueX - 3.4, 0, 68);
-      others[0].heading = 0;
-      others[0].mesh.rotation.y = 0;
-    }
-    if (others[1]) {
-      others[1].mesh.position.set(avenueX + 3.4, 0, 6);
-      others[1].heading = Math.PI;
-      others[1].mesh.rotation.y = Math.PI;
-    }
-    if (others[2]) {
-      others[2].mesh.position.set(avenueX - 3.4, 0, -34);
-      others[2].heading = 0;
-      others[2].mesh.rotation.y = 0;
-    }
-    poseCamera(game, 0.35, 0.3, 11.5);
+    const place = (c, x, z, heading) => {
+      if (!c) return;
+      c.mesh.position.set(x, 0, z);
+      c.heading = heading;
+      c.mesh.rotation.y = heading;
+    };
+    place(others[0], avenueX - 3.4, 68, 0); // ahead, same lane
+    place(others[1], avenueX + 3.4, 6, Math.PI); // oncoming
+    place(others[2], avenueX - 3.4, -34, 0); // behind
+    place(others[3], avenueX - 3.4, 118, 0); // far ahead, depth
+    place(others[4], avenueX + 3.4, -72, Math.PI); // oncoming, far
+    place(others[5], avenueX + 3.4, 96, Math.PI); // oncoming, mid
+    // Strollers on both sidewalks so the street level feels lived in.
+    const folks = game.peds.people;
+    if (folks[3]) folks[3].mesh.position.set(avenueX + 11.5, 0, 30);
+    if (folks[4]) folks[4].mesh.position.set(avenueX - 11.5, 0, 64);
+    if (folks[5]) folks[5].mesh.position.set(avenueX + 11.5, 0, -6);
+    poseCamera(game, 0.35, 0.22, 11);
     dressHud(game, { money: 620, speed: 61, clock: 52 });
     return;
   }
@@ -106,7 +108,19 @@ export function stageShot(game, name) {
     }
     game.heat = 3;
     game.particles.burst(-55, 0.7, z + 2, 0xffb35e, 22, 5, 0.7);
-    poseCamera(game, -Math.PI / 2 + 0.4, 0.3, 12.5);
+    // Civilian traffic ahead, so the chase reads as weaving through a living street.
+    const traffic = game.traffic.cars;
+    if (traffic[7]) {
+      traffic[7].mesh.position.set(-118, 0, z - 3.4);
+      traffic[7].heading = -Math.PI / 2;
+      traffic[7].mesh.rotation.y = -Math.PI / 2;
+    }
+    if (traffic[8]) {
+      traffic[8].mesh.position.set(-165, 0, z + 3.4);
+      traffic[8].heading = Math.PI / 2;
+      traffic[8].mesh.rotation.y = Math.PI / 2;
+    }
+    poseCamera(game, -Math.PI / 2 + 0.4, 0.24, 11.5);
     dressHud(game, { wanted: 3, money: 1450, speed: 94, clock: 88 });
     return;
   }
@@ -128,35 +142,46 @@ export function stageShot(game, name) {
       posePerson(foe.mesh, foe.phase, 0.3, true);
     }
     game.particles.burst(game.player.x + 1, 1.35, game.player.z, 0xffe28a, 5, 1.6, 0.2, 0.3);
+    // One of the crew fires back, so the yard crackles both ways.
+    const gunman = game.enemies[1] || game.enemies[0];
+    if (gunman) {
+      game.particles.burst(gunman.mesh.position.x - 0.6, 1.35, gunman.mesh.position.z, 0xffd27a, 4, 1.5, 0.18, 0.3);
+    }
     game.hud.setObjective('NEON RECKONING', 'Clear the warehouse yard. 5 of Vex’s crew still standing.');
     game.hud.say('Vex Marlowe', '#7dff8a', 'The courier himself! Hand over what you carried, and you walk.');
-    poseCamera(game, Math.PI / 2 - 0.3, 0.3, 9);
+    poseCamera(game, Math.PI / 2 - 0.3, 0.25, 7.6);
     dressHud(game, { wanted: 1, money: 1300, clock: 130 });
     return;
   }
 
-  // 'cover' (and anything else): the hero shot — the red coupe on the beachfront avenue
-  // at sunset, skyline behind, sea beside, the whole city in one frame.
+  // 'cover' (and anything else): the hero shot — the red convertible angled toward a
+  // low camera on the beachfront avenue at golden hour: nose and open cockpit to the
+  // lens, the island and the sun's glitter path on the water behind it, the skyline
+  // and the neon shore to the sides, traffic flowing past.
   const spot = game.city.heroCarSpot;
   const car = game.heroCar;
   // x = -49 sits midway between two streetlight poles, so no pole photobombs the hero.
-  seatPlayer(game, car, -49, spot.z - 3.4, -Math.PI / 2);
-  car.speed = 12;
-  // Life on the avenue: one car ahead in his lane, one coming the other way, a stroller
-  // on the promenade.
+  // The heading swings the nose across the avenue toward the camera for a front
+  // three-quarter stance, headlights glowing into the lens.
+  seatPlayer(game, car, -49, spot.z - 3.4, Math.PI / 2 + 1.05);
+  car.speed = 0;
+  // Life on the avenue: two cars rolling west into the sunset behind the hero, one
+  // eastbound car passing behind him, strollers on the promenade.
   const traffic = game.traffic.cars;
-  if (traffic[3]) {
-    traffic[3].mesh.position.set(-97, 0, spot.z - 3.4);
-    traffic[3].heading = -Math.PI / 2;
-    traffic[3].mesh.rotation.y = -Math.PI / 2;
-  }
-  if (traffic[4]) {
-    traffic[4].mesh.position.set(-140, 0, spot.z + 3.4);
-    traffic[4].heading = Math.PI / 2;
-    traffic[4].mesh.rotation.y = Math.PI / 2;
-  }
-  const stroller = game.peds.people[0];
-  if (stroller) stroller.mesh.position.set(-54, 0, spot.z + 13);
-  poseCamera(game, -Math.PI / 2 + 0.38, 0.24, 12.5);
+  const place = (c, x, z, heading) => {
+    if (!c) return;
+    c.mesh.position.set(x, 0, z);
+    c.heading = heading;
+    c.mesh.rotation.y = heading;
+  };
+  place(traffic[3], -88, spot.z - 3.4, -Math.PI / 2);
+  place(traffic[4], -150, spot.z + 3.4, Math.PI / 2);
+  place(traffic[5], -120, spot.z - 3.4, -Math.PI / 2);
+  place(traffic[6], -195, spot.z + 3.4, Math.PI / 2);
+  const folks = game.peds.people;
+  if (folks[0]) folks[0].mesh.position.set(-56, 0, spot.z + 13);
+  if (folks[1]) folks[1].mesh.position.set(-37, 0, spot.z + 12);
+  if (folks[2]) folks[2].mesh.position.set(-72, 0, spot.z + 14);
+  poseCamera(game, -1.0, 0.15, 9.8);
   dressHud(game, { money: 120, clock: 24 });
 }

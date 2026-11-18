@@ -43,7 +43,8 @@ function blobShadow(radius) {
 const paintMats = new Map();
 function paintMaterial(color) {
   if (!paintMats.has(color)) {
-    paintMats.set(color, new THREE.MeshPhongMaterial({ color, shininess: 90, specular: 0x886644 }));
+    // Glossy sunset paint: a tight, warm specular highlight so bodywork catches the low sun.
+    paintMats.set(color, new THREE.MeshPhongMaterial({ color, shininess: 160, specular: 0xd8b28a }));
   }
   return paintMats.get(color);
 }
@@ -53,10 +54,13 @@ const chromeMat = new THREE.MeshPhongMaterial({ color: 0xb9bec9, shininess: 120 
 
 /**
  * Build a car's mesh. kind: 'car' (civilian), 'police' (black-and-white with a light bar)
- * or 'taxi' (yellow with a roof sign). The returned group faces +Z; its userData holds the
- * moving parts: wheels (front pair steers), lightBar (police), brakeLights.
+ * or 'taxi' (yellow with a roof sign). Civilian cars come in three body styles —
+ * 'coupe' (glass cabin), 'convertible' (open top, seats and a raked windshield) and
+ * 'pickup' (cab forward, walled bed behind) — so the traffic reads as a real fleet.
+ * The returned group faces +Z; its userData holds the moving parts: wheels (front pair
+ * steers), lightBar (police), brakeLights.
  */
-export function makeCarMesh(color, kind = 'car') {
+export function makeCarMesh(color, kind = 'car', variant = 'coupe') {
   const group = new THREE.Group();
   const paint = kind === 'police' ? 0xf2f2f5 : kind === 'taxi' ? 0xf2b21b : color;
   const body = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.58, 4.35), paintMaterial(paint));
@@ -65,9 +69,46 @@ export function makeCarMesh(color, kind = 'car') {
   const nose = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.34, 0.7), paintMaterial(paint));
   nose.position.set(0, 0.48, 2.3);
   group.add(nose);
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.52, 2.1), glassMat);
-  cabin.position.set(0, 1.08, -0.25);
-  group.add(cabin);
+  if (kind === 'car' && variant === 'convertible') {
+    // Open top: a dark tub, two leather seats, a raked windshield, a folded rear deck.
+    const tub = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.3, 2.15), new THREE.MeshLambertMaterial({ color: 0x191920 }));
+    tub.position.set(0, 0.94, -0.3);
+    group.add(tub);
+    const seatMat = new THREE.MeshLambertMaterial({ color: 0x7a4030 });
+    for (const side of [-0.42, 0.42]) {
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.46, 0.5), seatMat);
+      seat.position.set(side, 1.0, -0.55);
+      group.add(seat);
+    }
+    const shield = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.52, 0.07), glassMat);
+    shield.position.set(0, 1.06, 0.72);
+    shield.rotation.x = -0.28;
+    group.add(shield);
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.16, 0.85), paintMaterial(paint));
+    deck.position.set(0, 0.95, -1.6);
+    group.add(deck);
+  } else if (kind === 'car' && variant === 'pickup') {
+    // Cab forward, open bed behind: two side walls, a tailgate and a dark bed floor.
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.52, 1.35), glassMat);
+    cab.position.set(0, 1.08, 0.62);
+    group.add(cab);
+    const wallMat = paintMaterial(paint);
+    for (const side of [-0.9, 0.9]) {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.44, 1.95), wallMat);
+      wall.position.set(side, 0.98, -1.18);
+      group.add(wall);
+    }
+    const gate = new THREE.Mesh(new THREE.BoxGeometry(1.84, 0.44, 0.1), wallMat);
+    gate.position.set(0, 0.98, -2.12);
+    group.add(gate);
+    const bed = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.07, 1.95), new THREE.MeshLambertMaterial({ color: 0x23242a }));
+    bed.position.set(0, 0.8, -1.18);
+    group.add(bed);
+  } else {
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.52, 2.1), glassMat);
+    cabin.position.set(0, 1.08, -0.25);
+    group.add(cabin);
+  }
   if (kind === 'police') {
     const band = new THREE.Mesh(new THREE.BoxGeometry(1.94, 0.3, 1.6), new THREE.MeshLambertMaterial({ color: 0x14151c }));
     band.position.set(0, 0.6, 0.1);
@@ -95,9 +136,9 @@ export function makeCarMesh(color, kind = 'car') {
     group.add(sign);
   }
   // Headlights and tail lights: small emissive boxes; the brake lights brighten in stepCar.
-  const headMat = new THREE.MeshBasicMaterial({ color: 0xfff2c0 });
+  const headMat = new THREE.MeshBasicMaterial({ color: 0xfff6d8 });
   for (const side of [-0.62, 0.62]) {
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.16, 0.06), headMat);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.19, 0.06), headMat);
     head.position.set(side, 0.62, 2.66);
     group.add(head);
   }
@@ -129,13 +170,13 @@ export function makeCarMesh(color, kind = 'car') {
 }
 
 /** Create a car object and add its mesh to the scene at (x, z) facing `heading`. */
-export function createCar(scene, x, z, heading, color, kind = 'car') {
-  const mesh = makeCarMesh(color, kind);
+export function createCar(scene, x, z, heading, color, kind = 'car', variant = 'coupe') {
+  const mesh = makeCarMesh(color, kind, variant);
   mesh.position.set(x, 0, z);
   mesh.rotation.y = heading;
   scene.add(mesh);
   return {
-    mesh, kind, color,
+    mesh, kind, variant, color,
     heading, speed: 0,
     health: 100,
     driver: null, // traffic AI state, set by TrafficSystem for its own cars
@@ -250,7 +291,9 @@ export class TrafficSystem {
     this.colliders = colliders;
     this.cars = [];
     for (let i = 0; i < count; i += 1) {
-      const car = createCar(scene, 0, 0, 0, pick(next, CAR_COLORS), next() < 0.08 ? 'taxi' : 'car');
+      const roll = next();
+      const variant = roll < 0.5 ? 'coupe' : roll < 0.74 ? 'convertible' : 'pickup';
+      const car = createCar(scene, 0, 0, 0, pick(next, CAR_COLORS), next() < 0.08 ? 'taxi' : 'car', variant);
       this.placeOnRoad(car, null, true);
       this.cars.push(car);
     }

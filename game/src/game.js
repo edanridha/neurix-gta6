@@ -101,7 +101,7 @@ export class Game {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.18;
+    this.renderer.toneMappingExposure = 1.34;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(58, 1, 0.1, 3200);
     this.sound = new SoundEngine();
@@ -124,14 +124,17 @@ export class Game {
     this.peds = new PedestrianSystem(this.scene, next, this.colliders, 26);
     this.particles = new Particles(this.scene);
 
-    // Parked cars, plus one good red coupe waiting by the spawn avenue.
+    // Parked cars, plus one good red convertible waiting by the spawn avenue.
     this.parked = [];
+    const bodyStyles = ['coupe', 'coupe', 'convertible', 'pickup'];
     for (const spot of parkingSpots(next, 15)) {
-      const car = createCar(this.scene, spot.x, spot.z, spot.heading, [0xc23b4e, 0x3b6ec2, 0xe0a51f, 0xd8d8de, 0x22242c, 0x39b56a][Math.floor(next() * 6)]);
+      const car = createCar(this.scene, spot.x, spot.z, spot.heading,
+        [0xc23b4e, 0x3b6ec2, 0xe0a51f, 0xd8d8de, 0x22242c, 0x39b56a][Math.floor(next() * 6)],
+        'car', bodyStyles[Math.floor(next() * bodyStyles.length)]);
       car.parked = true;
       this.parked.push(car);
     }
-    const hero = createCar(this.scene, LANDMARKS.spawn.x - 4.5, LANDMARKS.spawn.z + 7, 0, 0xd8283c);
+    const hero = createCar(this.scene, LANDMARKS.spawn.x - 4.5, LANDMARKS.spawn.z + 7, 0, 0xd8283c, 'car', 'convertible');
     hero.parked = true;
     this.parked.push(hero);
     this.heroCar = hero;

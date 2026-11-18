@@ -9,8 +9,10 @@ import { blockX, blockZ, resolveCollisions } from './city.js';
 import { pick, range } from './random.js';
 
 const skinTones = [0xe8b98d, 0xc68863, 0x8a5a3b, 0xf0c8a0, 0x6e4426];
-const shirtColors = [0xff5e7a, 0x4fd8ff, 0xffb340, 0x7dff8a, 0xe8e8e8, 0x7a4fd0, 0x2ec4b6, 0xff8c42];
-const pantsColors = [0x2b3550, 0x3a3a3a, 0x70543a, 0x243028, 0x54383e];
+const shirtColors = [0xff5e7a, 0x4fd8ff, 0xffb340, 0x7dff8a, 0xe8e8e8, 0x7a4fd0, 0x2ec4b6, 0xff8c42,
+  0xf4f1ea, 0x30343f, 0xffd1dc, 0x9be7c4, 0xffe066, 0xff7f50, 0x5b8def, 0xd94f70];
+const pantsColors = [0x2b3550, 0x3a3a3a, 0x70543a, 0x243028, 0x54383e, 0xd8d8de, 0x7a4a2b, 0x1f3a5f];
+const capColors = [0xff4f6d, 0xffb340, 0x4fd8ff, 0xf4f1ea, 0x22242c, 0x7dff8a];
 
 /**
  * Build one person. Returns a group facing +Z whose userData carries the limbs:
@@ -52,6 +54,17 @@ export function makePerson(next, opts = {}) {
   const hair = new THREE.Mesh(new THREE.BoxGeometry(0.37, 0.12, 0.37), mat(pick(next, [0x1c1410, 0x3a2415, 0x6e4a22, 0xb8b0a4, 0x802020])));
   hair.position.y = 1.88;
   group.add(hair);
+  // A third of the city wears a bright beach cap instead of hair.
+  if (!opts.gun && next() < 0.34) {
+    hair.visible = false;
+    const capMat = mat(pick(next, capColors));
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.19, 0.15, 8), capMat);
+    crown.position.y = 1.9;
+    group.add(crown);
+    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.24), capMat);
+    brim.position.set(0, 1.85, 0.26);
+    group.add(brim);
+  }
 
   if (opts.gun) {
     const pistol = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.14, 0.34), mat(0x17181c));

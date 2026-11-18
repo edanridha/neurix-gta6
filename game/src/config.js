@@ -35,15 +35,15 @@ export const WORLD_SPAN = 1240;
 /** Sunset palette: the game is set in the last hour of light, sliding into neon dusk. */
 export const PALETTE = {
   sky: 0x2e1a47,
-  skyHorizon: 0xff8c4a,
-  fog: 0x53355e,
-  sun: 0xffb066,
-  ambient: 0x8a6bbf,
-  water: 0x14425e,
+  skyHorizon: 0xff9550,
+  fog: 0x74355c,
+  sun: 0xffc06a,
+  ambient: 0x9a7bd0,
+  water: 0x174d68,
   waterGlow: 0x2e7ea6,
-  sand: 0xd9b380,
-  asphalt: 0x2b2e36,
-  sidewalk: 0x8f8a94,
+  sand: 0xe3c08a,
+  asphalt: 0x38333d,
+  sidewalk: 0x9a95a0,
   plaza: 0x4c4550,
 };
 
@@ -55,7 +55,7 @@ export const NEON_SIGNS = [
 ];
 
 /** Car paint jobs the city drives in. */
-export const CAR_COLORS = [0xc23b4e, 0x3b6ec2, 0xe0a51f, 0x39b56a, 0xd8d8de, 0x22242c, 0x7a4fd0, 0xe8e8e8, 0x1f8a8a, 0xd96c2c];
+export const CAR_COLORS = [0xc23b4e, 0x3b6ec2, 0xe0a51f, 0x39b56a, 0xd8d8de, 0x22242c, 0x7a4fd0, 0xe8e8e8, 0x1f8a8a, 0xd96c2c, 0xff6b9d, 0x9be7c4, 0xf4f1ea, 0x274690];
 
 /** The cast: name → the colour their dialogue is tinted with on screen. */
 export const CAST = {
